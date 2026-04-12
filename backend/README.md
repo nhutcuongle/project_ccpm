@@ -29,9 +29,9 @@ Tài liệu này xác định rõ ràng trách nhiệm của từng thành viên
 ---
 
 ## 👨‍💻 Thành viên 2: Tương Tác Bài Viết (Interaction & Engagement)
-**Nhiệm vụ:** Chịu trách nhiệm cho hệ thống bình luận, trả lời, tính toán điểm vote và follow người dùng. Phần này đòi hỏi logic kỹ thuật xử lý dữ liệu (Cập nhật cache số lượng).
+**Nhiệm vụ:** Chịu trách nhiệm cho hệ thống bình luận, trả lời, tính toán điểm vote. Phần này đòi hỏi logic kỹ thuật xử lý dữ liệu (Cập nhật cache số lượng).
 
-**Các Models liên quan:** `Answer.js`, `Vote.js`, `Follow.js`
+**Các Models liên quan:** `Answer.js`, `Vote.js`
 
 **Các tác vụ cụ thể:**
 1. **Answer & Comment:**
@@ -41,9 +41,7 @@ Tài liệu này xác định rõ ràng trách nhiệm của từng thành viên
 2. **Hệ Thống Bình Chọn (Voting):**
    - API thực hiện Upvote/Downvote một `Question` hoặc một `Answer` (Dựa trên `targetType` và `targetId`).
    - Xử lý mượt logic: Chặn không cho user vote liên tục, đồng thời tự động cập nhật trường `score` tổng cộng ở trong `Question.js`/`Answer.js` sau mỗi lần cộng/trừ điểm.
-3. **Theo dõi (Follow):**
-   - Tạo API cho phép User A nhấn Follow User B (`Follow.js`).
-   - Cung cấp API trả về "Danh sách người theo dõi của User".
+
 
 ---
 
