@@ -6,6 +6,9 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import adminUserRoutes from "./routes/adminUser.js";
 import userRoutes from "./routes/user.js";
+import voteRoutes from "./routes/vote.js";
+import answerRoutes from "./routes/answer.js";
+import questionRoutes from "./routes/question.js";
 import { authenticate, isAdmin } from "./middlewares/authMiddleware.js";
 
 dotenv.config();
@@ -36,6 +39,9 @@ app.use("/api/admin-only", authenticate, isAdmin, (req, res) => {
 
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/votes", voteRoutes);
+app.use("/api/answers", answerRoutes);
+app.use("/api/questions", questionRoutes);
 
 // ==============================
 // CONNECT DB & START
