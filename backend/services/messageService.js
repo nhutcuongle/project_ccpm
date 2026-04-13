@@ -76,8 +76,8 @@ export const getMessages = async (userId, convId, page = 1) => {
 
   const limit = 30;
   const [messages, total] = await Promise.all([
-    messageRepository.getByConversation(convId, page, limit),
-    messageRepository.countByConversation(convId),
+    messageRepository.getByConversation(convId, userId, page, limit),
+    messageRepository.countByConversation(convId, userId),
   ]);
 
   // Reset unread count cho user này
@@ -114,5 +114,16 @@ export const recallMessage = async (userId, msgId) => {
     io.to(`conv_${msg.conversation}`).emit("message_recalled", { msgId });
   }
 
+  return updated;
+};
+
+/**
+ * Xóa tin nhắn từ phía mình
+ */
+export const deleteForMe = async (userId, msgId) => {
+  const msg = await messageRepository.findById(msgId);
+  if (!msg) throw new Error("Tin nhắn không tồn tại");
+
+  const updated = await messageRepository.deleteForMe(msgId, userId);
   return updated;
 };

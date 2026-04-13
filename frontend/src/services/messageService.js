@@ -56,3 +56,9 @@ export const rejectRequest = (convId) =>
  */
 export const recallMessage = (msgId) =>
   axiosClient.delete(`/messages/${msgId}/recall`).then((r) => r.data.message);
+
+/**
+ * Xóa tin nhắn từ phía mình
+ */
+export const deleteForMe = (msgId) =>
+  axiosClient.delete(`/messages/${msgId}/delete-for-me`).then((r) => r.data.message);

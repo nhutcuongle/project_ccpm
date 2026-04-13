@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticate } from "../middlewares/authMiddleware.js";
-import { sendMessage, recallMessage } from "../controllers/messageController.js";
+import { sendMessage, recallMessage, deleteForMe } from "../controllers/messageController.js";
 
 const router = express.Router();
 
@@ -12,5 +12,8 @@ router.post("/", sendMessage);
 
 // Thu hồi tin nhắn: DELETE /api/messages/:id/recall
 router.delete("/:id/recall", recallMessage);
+
+// Xóa tin nhắn từ phía mình: DELETE /api/messages/:id/delete-for-me
+router.delete("/:id/delete-for-me", deleteForMe);
 
 export default router;

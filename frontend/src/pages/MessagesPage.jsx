@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import Avatar from "../components/ui/Avatar";
@@ -12,7 +12,7 @@ import "dayjs/locale/vi";
 import {
   Search, Send, MoreVertical, ArrowLeft, MessageCircle,
   Plus, Check, CheckCheck, Clock, X, UserCheck, Loader,
-  AlertCircle,
+  AlertCircle, MoreHorizontal, Trash2, RotateCcw
 } from "lucide-react";
 import * as messageService from "../services/messageService.js";
 
@@ -189,7 +189,45 @@ function PendingItem({ conv, onPreview, onAccept, onReject, isSent }) {
 // ─────────────────────────────────────────────────────
 // MESSAGE BUBBLE
 // ─────────────────────────────────────────────────────
-function MessageBubble({ msg, isMe }) {
+function MessageBubble({ msg, isMe, onRecall, onDeleteForMe }) {
+  const [showOptions, setShowOptions] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  // For own msg: "everyone" = recall, "me" = delete for me
+  const [deleteMode, setDeleteMode] = useState("everyone");
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowOptions(false);
+      }
+    };
+    if (showOptions) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showOptions]);
+
+  const openModal = () => {
+    setShowOptions(false);
+    setDeleteMode(isMe ? "everyone" : "me");
+    setShowModal(true);
+  };
+
+  const handleConfirm = () => {
+    setShowModal(false);
+    if (!isMe) {
+      // Other's message → only delete for me
+      onDeleteForMe(msg._id);
+    } else {
+      if (deleteMode === "everyone") {
+        onRecall(msg._id);
+      } else {
+        onDeleteForMe(msg._id);
+      }
+    }
+  };
+
   if (msg.isRecalled) {
     return (
       <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
@@ -201,21 +239,153 @@ function MessageBubble({ msg, isMe }) {
   }
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} group`}>
-      <div
-        className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm ${
-          isMe
-            ? "gradient-primary text-white rounded-br-md"
-            : "bg-slate-800/80 text-slate-200 rounded-bl-md"
-        }`}
-      >
-        <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.text}</p>
-        <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? "text-indigo-200/60" : "text-slate-500"}`}>
-          <span className="text-[10px]">{dayjs(msg.createdAt).format("HH:mm")}</span>
-          {isMe && (msg.status === "read" ? <CheckCheck size={11} /> : <Check size={11} />)}
+    <>
+      <div className={`flex ${isMe ? "justify-end" : "justify-start"} group relative`}>
+
+        {/* 3-dot button — LEFT of bubble (for own messages) */}
+        {isMe && (
+          <div className="relative flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity px-1" ref={menuRef}>
+            <button
+              onClick={() => setShowOptions(!showOptions)}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+            >
+              <MoreHorizontal size={15} />
+            </button>
+            {showOptions && (
+              <div className="absolute top-full right-0 mt-1 z-30 w-32 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 animate-fade-in text-left">
+                <button
+                  onClick={openModal}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 transition-colors"
+                >
+                  <Trash2 size={13} /> Thu hồi
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bubble Content */}
+        <div
+          className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm ${
+            isMe
+              ? "gradient-primary text-white rounded-br-sm"
+              : "bg-slate-800/80 text-slate-200 rounded-bl-sm"
+          }`}
+        >
+          <p style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.text}</p>
+          <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? "text-indigo-200/60" : "text-slate-500"}`}>
+            <span className="text-[10px]">{dayjs(msg.createdAt).format("HH:mm")}</span>
+            {isMe && (msg.status === "read" ? <CheckCheck size={11} /> : <Check size={11} />)}
+          </div>
         </div>
+
+        {/* 3-dot button — RIGHT of bubble (for other's messages) */}
+        {!isMe && (
+          <div className="relative flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity px-1" ref={menuRef}>
+            <button
+              onClick={() => setShowOptions(!showOptions)}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+            >
+              <MoreHorizontal size={15} />
+            </button>
+            {showOptions && (
+              <div className="absolute top-full left-0 mt-1 z-30 w-32 bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 animate-fade-in text-left">
+                <button
+                  onClick={openModal}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 transition-colors"
+                >
+                  <Trash2 size={13} /> Thu hồi
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-700/50 animate-fade-in-up">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/30">
+              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <Trash2 size={15} className="text-red-400" />
+                Xóa tin nhắn
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-3">
+              {isMe ? (
+                <>
+                  <p className="text-xs text-slate-400 mb-3">Chọn cách xóa tin nhắn này:</p>
+                  <label className="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-white/[0.03] border-slate-700/40 has-[:checked]:border-indigo-500/50 has-[:checked]:bg-indigo-500/5">
+                    <input
+                      type="radio"
+                      name={`deleteMode-${msg._id}`}
+                      value="everyone"
+                      checked={deleteMode === "everyone"}
+                      onChange={() => setDeleteMode("everyone")}
+                      className="mt-0.5 accent-indigo-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">Xóa với mọi người</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Tin nhắn sẽ bị thu hồi, cả hai phía đều không xem được nữa.</p>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-white/[0.03] border-slate-700/40 has-[:checked]:border-indigo-500/50 has-[:checked]:bg-indigo-500/5">
+                    <input
+                      type="radio"
+                      name={`deleteMode-${msg._id}`}
+                      value="me"
+                      checked={deleteMode === "me"}
+                      onChange={() => setDeleteMode("me")}
+                      className="mt-0.5 accent-indigo-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">Xóa về phía bạn</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Chỉ bạn không thấy tin nhắn này. Người kia vẫn xem bình thường.</p>
+                    </div>
+                  </label>
+                </>
+              ) : (
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/30">
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                    <Trash2 size={15} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">Xóa về phía bạn</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Tin nhắn này sẽ bị ẩn khỏi màn hình của bạn. Người kia vẫn xem được bình thường.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-2 px-5 py-4 border-t border-slate-700/30">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-2 rounded-xl text-sm font-medium text-slate-400 bg-slate-800/50 hover:bg-slate-700/50 transition-all border border-slate-700/30"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="flex-1 py-2 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-all shadow-md shadow-red-500/20"
+              >
+                Đồng ý
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -226,6 +396,7 @@ export default function MessagesPage() {
   const { user } = useAuth();
   const { socket } = useSocket();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // ─── State ───────────────────────────────────────
   const [activeTab, setActiveTab]           = useState("main");
@@ -418,6 +589,30 @@ export default function MessagesPage() {
       setText(msgText);
     } finally {
       setSending(false);
+    }
+  };
+
+  // ─── Recall / Delete For Me ───────────────────────
+  const handleRecall = async (msgId) => {
+    try {
+      await messageService.recallMessage(msgId);
+      // Optimistic update locally
+      setMessages((prev) =>
+        prev.map((m) => (String(m._id) === String(msgId) ? { ...m, isRecalled: true, text: "" } : m))
+      );
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Không thể thu hồi tin nhắn");
+    }
+  };
+
+  const handleDeleteForMe = async (msgId) => {
+    try {
+      await messageService.deleteForMe(msgId);
+      // Remove entirely from local view
+      setMessages((prev) => prev.filter((m) => String(m._id) !== String(msgId)));
+      toast.success("Đã xóa tin nhắn");
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Không thể xóa tin nhắn");
     }
   };
 
@@ -687,21 +882,26 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <Avatar src={selectedConv.other?.avatar} name={selectedConv.other?.username} size="md" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-200">{selectedConv.other?.username}</p>
-                  <p className="text-xs text-slate-500">
-                    {typingUser ? (
-                      <span className="text-indigo-400 animate-pulse">Đang nhập...</span>
-                    ) : (
-                      selectedConv.status === "pending" ? (
-                        <span className="text-amber-400 flex items-center gap-1">
-                          <Clock size={11} /> Đang chờ chấp nhận
-                        </span>
-                      ) : "Đang hoạt động"
-                    )}
-                  </p>
-                </div>
+                <button
+                  onClick={() => navigate(`/profile/${selectedConv.other?._id}`)}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <Avatar src={selectedConv.other?.avatar} name={selectedConv.other?.username} size="md" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200 hover:text-indigo-300 transition-colors">{selectedConv.other?.username}</p>
+                    <p className="text-xs text-slate-500">
+                      {typingUser ? (
+                        <span className="text-indigo-400 animate-pulse">Đang nhập...</span>
+                      ) : (
+                        selectedConv.status === "pending" ? (
+                          <span className="text-amber-400 flex items-center gap-1">
+                            <Clock size={11} /> Đang chờ chấp nhận
+                          </span>
+                        ) : "Đang hoạt động"
+                      )}
+                    </p>
+                  </div>
+                </button>
               </div>
               <button className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-all">
                 <MoreVertical size={18} />
@@ -772,6 +972,8 @@ export default function MessagesPage() {
                     key={msg._id}
                     msg={msg}
                     isMe={isMe}
+                    onRecall={handleRecall}
+                    onDeleteForMe={handleDeleteForMe}
                   />
                 );
               })}

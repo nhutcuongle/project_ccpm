@@ -11,9 +11,12 @@ export const createMessage = async ({ conversation, sender, text, attachments })
 /**
  * Lấy tin nhắn theo conversation, phân trang (newest → oldest)
  */
-export const getByConversation = async (convId, page = 1, limit = 30) => {
+export const getByConversation = async (convId, userId, page = 1, limit = 30) => {
   const skip = (page - 1) * limit;
-  const messages = await Message.find({ conversation: convId })
+  const messages = await Message.find({ 
+    conversation: convId,
+    deletedFor: { $ne: userId }
+  })
     .populate("sender", "username avatar")
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -25,8 +28,11 @@ export const getByConversation = async (convId, page = 1, limit = 30) => {
 /**
  * Đếm tổng tin nhắn trong conversation
  */
-export const countByConversation = async (convId) => {
-  return await Message.countDocuments({ conversation: convId });
+export const countByConversation = async (convId, userId) => {
+  return await Message.countDocuments({ 
+    conversation: convId,
+    deletedFor: { $ne: userId }
+  });
 };
 
 /**
@@ -57,9 +63,23 @@ export const updateStatus = async (msgId, status) => {
 /**
  * Lấy tin nhắn đầu tiên của conversation (dùng cho preview khi pending)
  */
-export const getFirstMessage = async (convId) => {
-  return await Message.findOne({ conversation: convId })
+export const getFirstMessage = async (convId, userId) => {
+  const query = { conversation: convId };
+  if (userId) query.deletedFor = { $ne: userId };
+
+  return await Message.findOne(query)
     .populate("sender", "username avatar")
     .sort({ createdAt: 1 })
     .lean();
+};
+
+/**
+ * Xóa tin nhắn từ phía người dùng
+ */
+export const deleteForMe = async (msgId, userId) => {
+  return await Message.findByIdAndUpdate(
+    msgId,
+    { $addToSet: { deletedFor: userId } },
+    { new: true }
+  ).lean();
 };

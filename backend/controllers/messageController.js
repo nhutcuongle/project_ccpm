@@ -30,3 +30,17 @@ export const recallMessage = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+/**
+ * DELETE /api/messages/:id/delete-for-me
+ * Xóa tin nhắn từ phía mình
+ */
+export const deleteForMe = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const message = await messageService.deleteForMe(req.user._id, id);
+    res.json({ message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
