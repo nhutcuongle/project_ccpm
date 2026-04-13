@@ -22,7 +22,7 @@ export const getUserByIdentifier = async (identifier) => {
 
 export const searchUsers = async (query) => {
   const res = await axiosClient.get(`/user/search`, { params: { q: query } });
-  return res.data;
+  return res.data.users || [];
 };
 
 

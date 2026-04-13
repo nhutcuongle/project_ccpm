@@ -5,7 +5,7 @@ import Card from "../components/ui/Card";
 import Avatar from "../components/ui/Avatar";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
-import { User, Mail, Phone, MapPin, Hash, FileText, Shield, Users } from "lucide-react";
+import { User, Mail, Phone, MapPin, Hash, FileText, Shield, Users, MessageCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import * as userService from "../services/userService";
 import * as followService from "../services/followService";
@@ -93,6 +93,13 @@ export default function PublicProfile() {
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => navigate("/messages", { state: { startChatWith: profile } })}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-slate-700/50 text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-sm border border-slate-600/30"
+            >
+              <MessageCircle size={16} />
+              Nhắn tin
+            </button>
             <FollowButton userId={userId} onStatusChange={handleFollowChange} />
           </div>
         </div>

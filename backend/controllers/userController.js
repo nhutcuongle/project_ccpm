@@ -49,7 +49,7 @@ export const searchUsers = async (req, res) => {
   try {
     const { q } = req.query;
     const users = await userService.searchUsers(q);
-    res.json(users);
+    res.json({ users });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
