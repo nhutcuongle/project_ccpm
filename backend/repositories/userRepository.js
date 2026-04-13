@@ -12,6 +12,25 @@ export const findByIdentifier = async (identifier) => {
   return await User.findOne({ identifier });
 };
 
+export const findByIdentifierLean = async (identifier, select = "") => {
+  let query = User.findOne({ identifier });
+  if (select) query = query.select(select);
+  return await query.lean();
+};
+
+export const searchUsers = async (searchTerm, limit = 5) => {
+  return await User.find({
+    $or: [
+      { username: { $regex: searchTerm, $options: "i" } },
+      { identifier: { $regex: searchTerm, $options: "i" } }
+    ]
+  })
+  .select("username identifier avatar")
+  .limit(limit)
+  .lean();
+};
+
+
 export const findById = async (id) => {
   return await User.findById(id);
 };

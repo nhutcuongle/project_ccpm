@@ -50,3 +50,14 @@ export const getUserProfile = async (userId) => {
   if (!user) throw new Error("Không tìm thấy người dùng");
   return user;
 };
+export const getUserByIdentifier = async (identifier) => {
+  const user = await userRepository.findByIdentifierLean(identifier, "-password");
+  if (!user) throw new Error("Không tìm thấy người dùng với mã định danh này");
+  return user;
+};
+
+export const searchUsers = async (query) => {
+  if (!query) return [];
+  return await userRepository.searchUsers(query);
+};
+

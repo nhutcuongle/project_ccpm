@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -164,9 +165,13 @@ export default function PostsPage() {
               {/* Post Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <Avatar src={post.author.avatar} name={post.author.username} size="md" />
+                  <Link to={`/profile/${post.author._id || post._id}`}>
+                    <Avatar src={post.author.avatar} name={post.author.username} size="md" className="hover:opacity-80 transition-opacity" />
+                  </Link>
                   <div>
-                    <p className="text-sm font-semibold text-slate-200">{post.author.username}</p>
+                    <Link to={`/profile/${post.author._id || post._id}`} className="text-sm font-semibold text-slate-200 hover:text-indigo-400 transition-colors">
+                      {post.author.username}
+                    </Link>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-slate-500">@{post.author.identifier}</p>
                       <span className="text-slate-700">·</span>

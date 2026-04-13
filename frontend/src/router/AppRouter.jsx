@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
 import ProfilePage from "../pages/ProfilePage";
+import PublicProfile from "../pages/PublicProfile";
 import SettingsPage from "../pages/SettingsPage";
 import MessagesPage from "../pages/MessagesPage";
 import PostsPage from "../pages/PostsPage";
@@ -37,6 +38,7 @@ export default function AppRouter() {
       {/* Protected */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/profile/:userId" element={<ProtectedRoute><PublicProfile /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
       <Route path="/posts" element={<ProtectedRoute><PostsPage /></ProtectedRoute>} />

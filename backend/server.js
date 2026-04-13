@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import adminUserRoutes from "./routes/adminUser.js";
 import userRoutes from "./routes/user.js";
+import followRoutes from "./routes/follow.js";
 import { authenticate, isAdmin } from "./middlewares/authMiddleware.js";
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use("/api/admin-only", authenticate, isAdmin, (req, res) => {
 
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/follow", followRoutes);
 
 // ==============================
 // CONNECT DB & START
@@ -48,3 +50,5 @@ mongoose
     );
   })
   .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// Trigger nodemon restart

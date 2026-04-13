@@ -2,18 +2,13 @@ import * as userRepository from "../repositories/userRepository.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-/**
- * Generate a JWT token for a user.
- */
+
 export const generateToken = (user) => {
   return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
 
-/**
- * Register a new user.
- */
 export const registerUser = async (data) => {
   const { username, email, password, identifier } = data;
 
@@ -39,9 +34,6 @@ export const registerUser = async (data) => {
   return { user: newUser, token };
 };
 
-/**
- * Authenticate a user by email and password.
- */
 export const loginUser = async (email, password) => {
   const user = await userRepository.findByEmail(email);
   if (!user) throw new Error("Không tìm thấy người dùng.");
@@ -52,3 +44,4 @@ export const loginUser = async (email, password) => {
   const token = generateToken(user);
   return { user, token };
 };
+
