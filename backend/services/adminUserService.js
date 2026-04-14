@@ -1,16 +1,11 @@
 import * as userRepository from "../repositories/userRepository.js";
 
-/**
- * Checks if the target user is an admin.
- */
+
 export const isTargetAdmin = async (userId) => {
   const user = await userRepository.findById(userId);
   return user?.role === "admin";
 };
 
-/**
- * Fetches all users with pagination and identifier filtering.
- */
 export const getAllUsersLogic = async (currentAdminId, query) => {
   const { page = 1, limit = 10, identifier = "" } = query;
   const filter = { _id: { $ne: currentAdminId } };
@@ -27,9 +22,7 @@ export const getAllUsersLogic = async (currentAdminId, query) => {
   return { users, total };
 };
 
-/**
- * Toggles a user's disabled status.
- */
+
 export const toggleDisableUserLogic = async (userId) => {
   const user = await userRepository.findById(userId);
   if (!user) throw new Error("USER_NOT_FOUND");

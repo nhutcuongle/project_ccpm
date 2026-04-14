@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
+=======
+import { useState } from "react";
+import { Link } from "react-router-dom";
+>>>>>>> origin/feature/messenger
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -130,12 +135,87 @@ export default function PostsPage() {
       ) : (
         <div className="space-y-4">
           {posts.map((post, i) => (
+<<<<<<< HEAD
             <PostItem
               key={post._id}
               post={post}
               onUpdate={handleUpdatePost}
               className={`animate-fade-in-up stagger-${Math.min(i + 1, 5)}`}
             />
+=======
+            <Card key={post._id} className={`animate-fade-in-up stagger-${Math.min(i + 1, 5)}`}>
+              {/* Post Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <Link to={`/profile/${post.author._id || post._id}`}>
+                    <Avatar src={post.author.avatar} name={post.author.username} size="md" className="hover:opacity-80 transition-opacity" />
+                  </Link>
+                  <div>
+                    <Link to={`/profile/${post.author._id || post._id}`} className="text-sm font-semibold text-slate-200 hover:text-indigo-400 transition-colors">
+                      {post.author.username}
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-slate-500">@{post.author.identifier}</p>
+                      <span className="text-slate-700">·</span>
+                      <p className="text-xs text-slate-500">{post.createdAt}</p>
+                    </div>
+                  </div>
+                </div>
+                <button className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all">
+                  <MoreHorizontal size={18} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mb-3">
+                {post.content}
+              </p>
+
+              {/* Tags */}
+              {post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {post.tags.map((tag) => (
+                    <Badge key={tag} variant="info">#{tag}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-3 border-t border-slate-700/30">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => toggleLike(post._id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      post.liked
+                        ? "text-pink-400 bg-pink-500/10"
+                        : "text-slate-500 hover:text-pink-400 hover:bg-pink-500/10"
+                    }`}
+                  >
+                    <Heart size={16} fill={post.liked ? "currentColor" : "none"} />
+                    {post.likes}
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+                    <MessageCircle size={16} />
+                    {post.comments}
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all">
+                    <Share2 size={16} />
+                    {post.shares}
+                  </button>
+                </div>
+                <button
+                  onClick={() => toggleSave(post._id)}
+                  className={`p-1.5 rounded-lg transition-all ${
+                    post.saved
+                      ? "text-amber-400"
+                      : "text-slate-500 hover:text-amber-400"
+                  }`}
+                >
+                  <Bookmark size={18} fill={post.saved ? "currentColor" : "none"} />
+                </button>
+              </div>
+            </Card>
+>>>>>>> origin/feature/messenger
           ))}
         </div>
       )}

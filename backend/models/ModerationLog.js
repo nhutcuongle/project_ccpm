@@ -9,3 +9,4 @@ const moderationLogSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model("ModerationLog", moderationLogSchema);
+

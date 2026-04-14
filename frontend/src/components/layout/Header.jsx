@@ -12,8 +12,11 @@ import {
   Menu,
   X,
   Shield,
+  Search,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import * as userService from "../../services/userService";
+import { toast } from "react-hot-toast";
 
 export default function Header() {
   const { user, isAuthenticated, logout, isAdmin } = useAuth();
@@ -22,11 +25,42 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  const searchRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        setShowDropdown(false);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const results = await userService.searchUsers(searchQuery);
+        setSearchResults(results);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(handleSearch, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleClick = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -95,6 +129,54 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
+            {/* Search */}
+            <div ref={searchRef} className="hidden md:block relative group z-50">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-indigo-400 transition-colors">
+                  <Search size={16} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.trim() && setShowDropdown(true)}
+                  className="w-48 pl-9 pr-4 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all focus:w-64"
+                />
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {showDropdown && (
+                <div className="absolute top-full mt-2 w-full bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                  {isSearching ? (
+                    <div className="p-3 text-sm text-slate-400 text-center">Đang tìm...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="max-h-64 overflow-y-auto">
+                      {searchResults.map((result) => (
+                        <div
+                          key={result._id}
+                          onClick={() => {
+                            setShowDropdown(false);
+                            setSearchQuery("");
+                            navigate(result._id === (user?._id || user?.id) ? "/profile" : `/profile/${result._id}`);
+                          }}
+                          className="flex items-center gap-3 p-2 hover:bg-slate-700/50 cursor-pointer transition-colors"
+                        >
+                          <Avatar src={result.avatar} name={result.username} size="sm" />
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-medium text-slate-200 truncate">{result.username}</p>
+                            <p className="text-xs text-slate-400 truncate">@{result.identifier}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 text-sm text-slate-400 text-center">Không có kết quả</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Profile dropdown */}
             <div className="relative" ref={profileRef}>
               <button

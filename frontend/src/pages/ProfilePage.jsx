@@ -6,9 +6,11 @@ import Button from "../components/ui/Button";
 import Avatar from "../components/ui/Avatar";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
-import { User, Mail, Phone, MapPin, Hash, FileText, Save, X, Camera, Shield } from "lucide-react";
+import { User, Mail, Phone, MapPin, Hash, FileText, Save, X, Camera, Shield, Users } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axiosClient from "../services/axiosClient";
+import * as followService from "../services/followService";
+import FollowListModal from "../components/follow/FollowListModal";
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -17,6 +19,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({});
+  const [stats, setStats] = useState({ followers: 0, following: 0 });
+  const [followModalConfig, setFollowModalConfig] = useState({ isOpen: false, type: "followers" });
 
   useEffect(() => {
     fetchProfile();
@@ -24,9 +28,20 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await axiosClient.get("/user/me");
-      setProfile(res.data);
-      setForm(res.data);
+      const profileRes = await axiosClient.get("/user/me");
+      const profileData = profileRes.data;
+      
+      const [followersRes, followingRes] = await Promise.all([
+        followService.getFollowers(profileData._id, 1, 1),
+        followService.getFollowing(profileData._id, 1, 1)
+      ]);
+      
+      setProfile(profileData);
+      setForm(profileData);
+      setStats({
+        followers: followersRes.pagination.total,
+        following: followingRes.pagination.total
+      });
     } catch (err) {
       toast.error("Không thể tải hồ sơ");
     } finally {
@@ -86,6 +101,20 @@ export default function ProfilePage() {
               <Badge variant={profile?.isDisabled ? "disabled" : "active"}>
                 {profile?.isDisabled ? "Vô hiệu hóa" : "Hoạt động"}
               </Badge>
+              <div className="flex items-center gap-4 ml-2 text-xs text-slate-400">
+                <button 
+                  onClick={() => setFollowModalConfig({ isOpen: true, type: "followers" })}
+                  className="flex items-center gap-1 hover:text-indigo-400 transition-colors"
+                >
+                  <Users size={14}/> <strong>{stats.followers}</strong> người theo dõi
+                </button>
+                <button 
+                  onClick={() => setFollowModalConfig({ isOpen: true, type: "following" })}
+                  className="flex items-center gap-1 hover:text-indigo-400 transition-colors"
+                >
+                  <strong>{stats.following}</strong> đang theo dõi
+                </button>
+              </div>
             </div>
           </div>
           <div>
@@ -157,6 +186,13 @@ export default function ProfilePage() {
           )}
         </div>
       </Card>
+
+      <FollowListModal
+        isOpen={followModalConfig.isOpen}
+        onClose={() => setFollowModalConfig({ ...followModalConfig, isOpen: false })}
+        userId={profile?._id}
+        type={followModalConfig.type}
+      />
     </div>
   );
 }
