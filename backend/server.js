@@ -10,16 +10,13 @@ import User from "./models/User.js";
 import authRoutes from "./routes/auth.js";
 import adminUserRoutes from "./routes/adminUser.js";
 import userRoutes from "./routes/user.js";
-<<<<<<< HEAD
 import voteRoutes from "./routes/vote.js";
 import answerRoutes from "./routes/answer.js";
 import questionRoutes from "./routes/question.js";
-=======
 import followRoutes from "./routes/follow.js";
 import conversationRoutes from "./routes/conversation.js";
 import messageRoutes from "./routes/message.js";
-
->>>>>>> origin/feature/messenger
+import hashtagRoutes from "./routes/hashtag.js";
 import { authenticate, isAdmin } from "./middlewares/authMiddleware.js";
 import { initIo } from "./socket.js";
 
@@ -118,15 +115,13 @@ app.use("/api/admin-only", authenticate, isAdmin, (req, res) => {
 
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/user", userRoutes);
-<<<<<<< HEAD
 app.use("/api/votes", voteRoutes);
 app.use("/api/answers", answerRoutes);
 app.use("/api/questions", questionRoutes);
-=======
 app.use("/api/follow", followRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/messages", messageRoutes);
->>>>>>> origin/feature/messenger
+app.use("/api/hashtags", hashtagRoutes);
 
 // ==============================
 // CONNECT DB & START

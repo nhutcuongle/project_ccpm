@@ -1,25 +1,19 @@
 import express from "express";
+import multer from "multer";
+import { storage } from "../utils/cloudinary.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
-import { createQuestion, getQuestions, getQuestionById } from "../controllers/questionController.js";
+import * as questionController from "../controllers/questionController.js";
 
+const upload = multer({ storage });
 const router = express.Router();
 
-// Optional authenticate for getQuestions but required for createQuestion
-const optionalAuth = (req, res, next) => {
-    // Nếu có token thì authenticate, nếu không thì cho qua (để lấy post mà không có userVote)
-    // Giả sử authenticate middleware gắn user vào req.
-    // Thực tế có thể cần một middleware riêng cho optional auth.
-    // Đối với project này, nếu muốn lấy userVote thì cần auth.
-    next();
-};
+// Public routes
+router.get("/", questionController.getQuestions);
+router.get("/:id", questionController.getQuestionById);
 
-router.get("/", (req, res, next) => {
-    // Mock optional auth: check header Authorization
-    next();
-}, getQuestions);
-
-router.get("/:id", getQuestionById);
-
-router.post("/", authenticate, createQuestion);
+// Protected routes
+router.post("/", authenticate, upload.array("images", 5), questionController.createQuestion);
+router.put("/:id", authenticate, questionController.updateQuestion);
+router.delete("/:id", authenticate, questionController.deleteQuestion);
 
 export default router;

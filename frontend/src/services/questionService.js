@@ -1,18 +1,21 @@
-import axiosClient from "./axiosClient";
+import axiosClient from './axiosClient';
 
-const questionService = {
-  getAllQuestions: async () => {
-    const response = await axiosClient.get("/questions");
-    return response.data;
-  },
-  getQuestionById: async (id) => {
-    const response = await axiosClient.get(`/questions/${id}`);
-    return response.data;
-  },
-  createQuestion: async (data) => {
-    const response = await axiosClient.post("/questions", data);
-    return response.data;
-  },
-};
+// Lấy danh sách câu hỏi theo params (page, limit, hashtag, search, sort)
+export const getQuestions = (params) => axiosClient.get('/questions', { params });
 
-export default questionService;
+// Lấy chi tiết một câu hỏi
+export const getQuestionById = (id) => axiosClient.get(`/questions/${id}`);
+
+// Tạo câu hỏi (hỗ trợ FormData vì có upload ảnh)
+export const createQuestion = (formData) => 
+  axiosClient.post('/questions', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+// Sửa câu hỏi
+export const updateQuestion = (id, data) => axiosClient.put(`/questions/${id}`, data);
+
+// Xóa câu hỏi
+export const deleteQuestion = (id) => axiosClient.delete(`/questions/${id}`);
