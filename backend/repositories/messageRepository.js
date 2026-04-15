@@ -1,10 +1,12 @@
 import Message from "../models/Message.js";
+import { encryptText, decryptMessageObj } from "../utils/encryption.js";
 
 /**
  * Tạo tin nhắn mới
  */
 export const createMessage = async ({ conversation, sender, text, attachments }) => {
-  const msg = new Message({ conversation, sender, text, attachments });
+  const encryptedText = encryptText(text);
+  const msg = new Message({ conversation, sender, text: encryptedText, attachments });
   return await msg.save();
 };
 
@@ -22,7 +24,8 @@ export const getByConversation = async (convId, userId, page = 1, limit = 30) =>
     .skip(skip)
     .limit(limit)
     .lean();
-  return messages.reverse(); // trả về theo thứ tự cũ → mới
+  
+  return messages.map(decryptMessageObj).reverse(); // trả về theo thứ tự cũ → mới
 };
 
 /**
@@ -39,7 +42,8 @@ export const countByConversation = async (convId, userId) => {
  * Tìm message theo ID
  */
 export const findById = async (msgId) => {
-  return await Message.findById(msgId).lean();
+  const msg = await Message.findById(msgId).lean();
+  return decryptMessageObj(msg);
 };
 
 /**
@@ -67,10 +71,12 @@ export const getFirstMessage = async (convId, userId) => {
   const query = { conversation: convId };
   if (userId) query.deletedFor = { $ne: userId };
 
-  return await Message.findOne(query)
+  const msg = await Message.findOne(query)
     .populate("sender", "username avatar")
     .sort({ createdAt: 1 })
     .lean();
+    
+  return decryptMessageObj(msg);
 };
 
 /**
