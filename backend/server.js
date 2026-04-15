@@ -30,7 +30,7 @@ const httpServer = createServer(app);
 // ==============================
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [process.env.CLIENT_URL || "http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true,
   },
 });
@@ -84,8 +84,8 @@ io.on("connection", (socket) => {
     socket.to(`conv_${convId}`).emit("user_stop_typing", { userId });
   });
 
-  socket.on("disconnect", () => {
-    console.log(`❌ Socket disconnected: ${socket.user.username}`);
+  socket.on("disconnect", (reason) => {
+    console.log(`❌ Socket disconnected: ${socket.user.username} | Reason: ${reason}`);
   });
 });
 
@@ -94,7 +94,7 @@ io.on("connection", (socket) => {
 // ==============================
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: [process.env.CLIENT_URL || "http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true,
   })
 );

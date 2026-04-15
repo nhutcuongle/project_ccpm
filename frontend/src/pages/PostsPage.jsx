@@ -5,6 +5,8 @@ import Button from "../components/ui/Button";
 import Avatar from "../components/ui/Avatar";
 import Modal from "../components/ui/Modal";
 import EmptyState from "../components/ui/EmptyState";
+import Badge from "../components/ui/Badge";
+import PostItem from "../components/PostItem";
 import {
   PenSquare,
   Heart,
@@ -179,6 +181,10 @@ export default function PostsPage() {
     return date.toLocaleDateString("vi-VN");
   };
 
+  const handleUpdatePost = (postId, data) => {
+    setPosts(prevPosts => prevPosts.map(p => p._id === postId ? { ...p, ...data } : p));
+  };
+
   const filters = [
     { key: "newest", label: "Mới nhất", icon: <Clock size={14} /> },
     { key: "popular", label: "Phổ biến", icon: <TrendingUp size={14} /> },
@@ -288,99 +294,18 @@ export default function PostsPage() {
         ) : (
           <div className="space-y-4">
             {posts.map((post, i) => (
-              <Card key={post._id} className={`animate-fade-in-up stagger-${Math.min(i + 1, 5)} overflow-visible`}>
-                {/* Post Header */}
-                <div className="flex items-start justify-between mb-3 relative">
-                  <div className="flex items-center gap-3">
-                    <Avatar src={post.author?.avatar} name={post.author?.username || "Ẩn danh"} size="md" />
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200">
-                        {post.author?.username || "Ẩn danh"}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-slate-500">{getTimeAgo(post.createdAt)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Dropdown Options */}
-                  {(user?._id === post.author?._id || isAdmin) && (
-                    <div className="relative">
-                      <button
-                        onClick={() => setActiveDropdown(activeDropdown === post._id ? null : post._id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all"
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                      {activeDropdown === post._id && (
-                        <div className="absolute right-0 mt-2 w-36 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-10 overflow-hidden">
-                          <button
-                            onClick={() => handleEdit(post)}
-                            className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 flex items-center gap-2"
-                          >
-                            <Edit size={14} /> Sửa
-                          </button>
-                          <button
-                            onClick={() => handleDelete(post._id)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
-                          >
-                            <Trash2 size={14} /> Xóa
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <h3 className="text-base font-bold text-slate-100 mb-2">{post.title}</h3>
-                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mb-3">
-                  {post.content}
-                </p>
-
-                {/* Images */}
-                {post.images && post.images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {post.images.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img}
-                        alt="Question upload"
-                        className="rounded-lg object-cover w-full max-h-48"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Tags */}
-                {post.hashtags && post.hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {post.hashtags.map((tag) => (
-                      <button
-                        key={tag._id}
-                        onClick={() => setActiveHashtagFilter(tag.name)}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                      >
-                        <Badge variant="info">#{tag.name}</Badge>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-700/30">
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all">
-                      <Heart size={16} />
-                      {post.score || 0}
-                    </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all">
-                      <MessageCircle size={16} />
-                      {post.answersCount || 0}
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <PostItem 
+                key={post._id} 
+                post={post}
+                onUpdate={handleUpdatePost}
+                className={`animate-fade-in-up stagger-${Math.min(i + 1, 5)}`}
+                activeDropdown={activeDropdown}
+                setActiveDropdown={setActiveDropdown}
+                handleEdit={handleEdit}
+                handleDelete={handleDelete}
+                setActiveHashtagFilter={setActiveHashtagFilter}
+                getTimeAgo={getTimeAgo}
+              />
             ))}
           </div>
         )}

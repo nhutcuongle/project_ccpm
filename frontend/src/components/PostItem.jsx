@@ -12,12 +12,13 @@ import {
   MoreHorizontal,
   Send,
   Trash2,
+  Edit
 } from "lucide-react";
 import voteService from "../services/voteService";
 import answerService from "../services/answerService";
 import { useAuth } from "../context/AuthContext";
 
-export default function PostItem({ post, onUpdate }) {
+export default function PostItem({ post, onUpdate, className, activeDropdown, setActiveDropdown, handleEdit, handleDelete, setActiveHashtagFilter, getTimeAgo }) {
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [answers, setAnswers] = useState([]);
@@ -88,7 +89,7 @@ export default function PostItem({ post, onUpdate }) {
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-visible ${className || ""}`}>
       <div className="flex gap-4">
         {/* Voting Sidebar */}
         <div className="flex flex-col items-center gap-1 pt-1">
@@ -104,7 +105,7 @@ export default function PostItem({ post, onUpdate }) {
           <span className={`text-sm font-bold ${
             post.userVote === "up" ? "text-orange-500" : post.userVote === "down" ? "text-indigo-400" : "text-slate-300"
           }`}>
-            {post.score}
+            {post.score || 0}
           </span>
           <button
             onClick={() => handleVote("down")}
@@ -118,38 +119,81 @@ export default function PostItem({ post, onUpdate }) {
         </div>
 
         {/* Post Content Area */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-3 relative">
             <div className="flex items-center gap-3">
-              <Avatar src={post.author.avatar} name={post.author.username} size="md" />
+              <Avatar src={post.author?.avatar} name={post.author?.username || "Ẩn danh"} size="md" />
               <div>
-                <p className="text-sm font-semibold text-slate-200">{post.author.username}</p>
+                <p className="text-sm font-semibold text-slate-200">
+                  {post.author?.username || "Ẩn danh"}
+                </p>
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-slate-500">@{post.author.identifier}</p>
-                  <span className="text-slate-700">·</span>
-                  <p className="text-xs text-slate-500">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </p>
+                  <p className="text-xs text-slate-500">{getTimeAgo ? getTimeAgo(post.createdAt) : new Date(post.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
-            <button className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all">
-              <MoreHorizontal size={18} />
-            </button>
+
+            {/* Dropdown Options */}
+            {(user?._id === post.author?._id || user?.role === "admin") && (
+              <div className="relative">
+                <button
+                  onClick={() => setActiveDropdown(activeDropdown === post._id ? null : post._id)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all"
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+                {activeDropdown === post._id && (
+                  <div className="absolute right-0 mt-2 w-36 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-10 overflow-hidden">
+                    <button
+                      onClick={() => handleEdit(post)}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 flex items-center gap-2"
+                    >
+                      <Edit size={14} /> Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post._id)}
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
+                    >
+                      <Trash2 size={14} /> Xóa
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Body */}
-          <h3 className="text-base font-bold text-slate-100 mb-2">{post.title}</h3>
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mb-4">
+          <h3 className="text-base font-bold text-slate-100 mb-2 truncate whitespace-normal">{post.title}</h3>
+          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mb-3">
             {post.content}
           </p>
+
+          {/* Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {post.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt="Question upload"
+                  className="rounded-lg object-cover w-full max-h-48"
+                />
+              ))}
+            </div>
+          )}
 
           {/* Tags */}
           {post.hashtags && post.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-4">
               {post.hashtags.map((tag) => (
-                <Badge key={tag._id} variant="info">#{tag.name || tag}</Badge>
+                <button
+                  key={tag._id || tag}
+                  onClick={() => setActiveHashtagFilter(tag.name || tag)}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <Badge variant="info">#{tag.name || tag}</Badge>
+                </button>
               ))}
             </div>
           )}
@@ -164,7 +208,7 @@ export default function PostItem({ post, onUpdate }) {
                 }`}
               >
                 <MessageCircle size={16} />
-                {post.answersCount} câu trả lời
+                {post.answersCount || 0} câu trả lời
               </button>
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all">
                 <Share2 size={16} />
@@ -213,7 +257,7 @@ export default function PostItem({ post, onUpdate }) {
                       <div className="flex-1 bg-slate-800/30 rounded-xl p-3 relative">
                         <div className="flex justify-between items-start mb-1">
                           <p className="text-xs font-bold text-slate-200">{ans.author.username}</p>
-                          {user?.id === ans.author._id && (
+                          {user?._id === ans.author._id && (
                             <button
                                onClick={() => handleDeleteAnswer(ans._id)}
                                className="text-slate-600 hover:text-red-400 transition-colors"
