@@ -13,6 +13,7 @@ import {
   X,
   Shield,
   Search,
+  FileText,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import * as userService from "../../services/userService";
@@ -114,15 +115,15 @@ export default function Header() {
             ))}
             {isAdmin && (
               <Link
-                to="/admin/users"
+                to="/admin"
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  isActive("/admin/users")
+                  location.pathname.startsWith("/admin")
                     ? "gradient-primary text-white shadow-md shadow-indigo-500/25"
                     : "text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10"
                 }`}
               >
                 <Shield size={20} />
-                <span>Quản lý</span>
+                <span>Admin</span>
               </Link>
             )}
           </nav>
@@ -253,18 +254,44 @@ export default function Header() {
                 </Link>
               ))}
               {isAdmin && (
-                <Link
-                  to="/admin/users"
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive("/admin/users")
-                      ? "gradient-primary text-white"
-                      : "text-amber-400/80 hover:bg-amber-500/10"
-                  }`}
-                >
-                  <Shield size={20} />
-                  Quản lý người dùng
-                </Link>
+                <>
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive("/admin")
+                        ? "gradient-primary text-white"
+                        : "text-amber-400/80 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <Shield size={20} />
+                    Bảng điều khiển Admin
+                  </Link>
+                  <Link
+                    to="/admin/questions"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive("/admin/questions")
+                        ? "gradient-primary text-white"
+                        : "text-amber-400/80 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <FileText size={20} />
+                    Quản lý câu hỏi
+                  </Link>
+                  <Link
+                    to="/admin/users"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive("/admin/users")
+                        ? "gradient-primary text-white"
+                        : "text-amber-400/80 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <Users size={20} />
+                    Quản lý người dùng
+                  </Link>
+                </>
               )}
             </nav>
           </div>

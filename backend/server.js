@@ -9,6 +9,8 @@ import User from "./models/User.js";
 
 import authRoutes from "./routes/auth.js";
 import adminUserRoutes from "./routes/adminUser.js";
+import adminQuestionRoutes from "./routes/adminQuestion.js";
+import adminStatsRoutes from "./routes/adminStats.js";
 import userRoutes from "./routes/user.js";
 import voteRoutes from "./routes/vote.js";
 import answerRoutes from "./routes/answer.js";
@@ -114,6 +116,8 @@ app.use("/api/admin-only", authenticate, isAdmin, (req, res) => {
 });
 
 app.use("/api/admin/users", adminUserRoutes);
+app.use("/api/admin/questions", adminQuestionRoutes);
+app.use("/api/admin/stats", adminStatsRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/answers", answerRoutes);

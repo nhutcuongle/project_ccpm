@@ -10,6 +10,8 @@ import SettingsPage from "../pages/SettingsPage";
 import MessagesPage from "../pages/MessagesPage";
 import PostsPage from "../pages/PostsPage";
 import AdminUserList from "../pages/admin/AdminUserList";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminQuestionList from "../pages/admin/AdminQuestionList";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -44,7 +46,9 @@ export default function AppRouter() {
       <Route path="/posts" element={<ProtectedRoute><PostsPage /></ProtectedRoute>} />
 
       {/* Admin only */}
+      <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/users" element={<AdminRoute><AdminUserList /></AdminRoute>} />
+      <Route path="/admin/questions" element={<AdminRoute><AdminQuestionList /></AdminRoute>} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
