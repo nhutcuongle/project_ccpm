@@ -1,12 +1,14 @@
 import Conversation from "../models/Conversation.js";
+import { encryptText, decryptConversationObj } from "../utils/encryption.js";
 
 /**
  * Tìm conversation giữa 2 user (không phân biệt thứ tự)
  */
 export const findByParticipants = async (userAId, userBId) => {
-  return await Conversation.findOne({
+  const conv = await Conversation.findOne({
     participants: { $all: [userAId, userBId], $size: 2 },
   }).lean();
+  return decryptConversationObj(conv);
 };
 
 /**
@@ -26,7 +28,7 @@ export const createConversation = async ({ participants, status, requestedTo }) 
  * Lấy danh sách conversation active của user (tab chính)
  */
 export const getActiveConversations = async (userId) => {
-  return await Conversation.find({
+  const convs = await Conversation.find({
     participants: userId,
     status: "active",
     deletedFor: { $ne: userId },
@@ -34,26 +36,28 @@ export const getActiveConversations = async (userId) => {
     .populate("participants", "username avatar bio")
     .sort({ updatedAt: -1 })
     .lean();
+  return convs.map(decryptConversationObj);
 };
 
 /**
  * Lấy danh sách conversation pending mà user là RECIPIENT (tab tin nhắn chờ)
  */
 export const getPendingConversations = async (userId) => {
-  return await Conversation.find({
+  const convs = await Conversation.find({
     requestedTo: userId,
     status: "pending",
   })
     .populate("participants", "username avatar bio")
     .sort({ updatedAt: -1 })
     .lean();
+  return convs.map(decryptConversationObj);
 };
 
 /**
  * Lấy conversation pending mà user là SENDER (để sender xem lại)
  */
 export const getSentPendingConversations = async (userId) => {
-  return await Conversation.find({
+  const convs = await Conversation.find({
     participants: userId,
     status: "pending",
     requestedTo: { $ne: userId },
@@ -61,37 +65,42 @@ export const getSentPendingConversations = async (userId) => {
     .populate("participants", "username avatar bio")
     .sort({ updatedAt: -1 })
     .lean();
+  return convs.map(decryptConversationObj);
 };
 
 /**
  * Tìm conversation theo ID
  */
 export const findById = async (convId) => {
-  return await Conversation.findById(convId)
+  const conv = await Conversation.findById(convId)
     .populate("participants", "username avatar bio")
     .lean();
+  return decryptConversationObj(conv);
 };
 
 /**
  * Cập nhật trạng thái conversation
  */
 export const updateStatus = async (convId, status) => {
-  return await Conversation.findByIdAndUpdate(
+  const conv = await Conversation.findByIdAndUpdate(
     convId,
     { $unset: { requestedTo: 1 }, status },
     { new: true }
   ).lean();
+  return decryptConversationObj(conv);
 };
 
 /**
  * Cập nhật lastMessage sau khi gửi tin
  */
 export const updateLastMessage = async (convId, { text, sender, createdAt }) => {
-  return await Conversation.findByIdAndUpdate(
+  const encryptedText = encryptText(text);
+  const conv = await Conversation.findByIdAndUpdate(
     convId,
-    { lastMessage: { text, sender, createdAt } },
+    { lastMessage: { text: encryptedText, sender, createdAt } },
     { new: true }
   ).lean();
+  return decryptConversationObj(conv);
 };
 
 /**

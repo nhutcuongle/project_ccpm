@@ -409,7 +409,6 @@ export default function MessagesPage() {
   const [text, setText]                     = useState("");
   const [loadingConvs, setLoadingConvs]     = useState(true);
   const [loadingMsgs, setLoadingMsgs]       = useState(false);
-  const [sending, setSending]               = useState(false);
   const [searchQuery, setSearchQuery]       = useState("");
   const [showNewModal, setShowNewModal]     = useState(false);
   const [typingUser, setTypingUser]         = useState(null);
@@ -563,19 +562,39 @@ export default function MessagesPage() {
 
   // ─── Send message ─────────────────────────────────
   const handleSend = async () => {
-    if (!text.trim() || !selectedConv || sending) return;
+    if (!text.trim() || !selectedConv) return;
     if (selectedConv.status === "pending" && String(selectedConv.requestedTo) === String(user?._id || user?.id))
       return; // recipient chưa chấp nhận thì không gửi được từ phía họ
 
     const msgText = text.trim();
     setText("");
-    setSending(true);
+
+    // Optimistic update
+    const tempId = "temp_" + Date.now();
+    const optimisticMsg = {
+      _id: tempId,
+      text: msgText,
+      sender: user?._id || user?.id,
+      createdAt: new Date().toISOString(),
+      status: "sending"
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setConversations((prev) =>
+      prev.map((c) =>
+        String(c._id) === String(selectedConv._id)
+          ? { ...c, lastMessage: { text: msgText, createdAt: optimisticMsg.createdAt } }
+          : c
+      )
+    );
 
     try {
       const msg = await messageService.sendMessage(selectedConv._id, msgText);
+      // Replace optimistic message
       setMessages((prev) => {
-        const exists = prev.find((m) => String(m._id) === String(msg._id));
-        return exists ? prev : [...prev, msg];
+        const filtered = prev.filter((m) => m._id !== tempId);
+        const exists = filtered.find((m) => String(m._id) === String(msg._id));
+        return exists ? filtered : [...filtered, msg];
       });
       setConversations((prev) =>
         prev.map((c) =>
@@ -586,9 +605,8 @@ export default function MessagesPage() {
       );
     } catch (e) {
       toast.error(e?.response?.data?.message || "Gửi tin nhắn thất bại");
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
       setText(msgText);
-    } finally {
-      setSending(false);
     }
   };
 
@@ -1021,9 +1039,9 @@ export default function MessagesPage() {
                       onClick={handleSend}
                       size="md"
                       className="!px-4 !py-2.5 shrink-0"
-                      disabled={!text.trim() || sending}
+                      disabled={!text.trim()}
                     >
-                      {sending ? <Loader size={16} className="animate-spin" /> : <Send size={16} />}
+                      <Send size={16} />
                     </Button>
                   </div>
                 )}
