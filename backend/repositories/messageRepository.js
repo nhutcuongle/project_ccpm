@@ -1,12 +1,11 @@
 import Message from "../models/Message.js";
-import { encryptText, decryptMessageObj } from "../utils/encryption.js";
+import { decryptMessageObj } from "../utils/encryption.js";
 
 /**
  * Tạo tin nhắn mới
  */
 export const createMessage = async ({ conversation, sender, text, attachments }) => {
-  const encryptedText = encryptText(text);
-  const msg = new Message({ conversation, sender, text: encryptedText, attachments });
+  const msg = new Message({ conversation, sender, text, attachments });
   return await msg.save();
 };
 

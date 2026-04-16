@@ -1,13 +1,15 @@
 import express from "express";
-import { getAllQuestions, deleteQuestion } from "../controllers/adminQuestionController.js";
+import { getAllQuestions, deleteQuestion, approveQuestion, rejectQuestion } from "../controllers/adminQuestionController.js";
 import { authenticate, isAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Lấy tất cả câu hỏi
-router.get("/", authenticate, isAdmin, getAllQuestions);
+router.use(authenticate);
+router.use(isAdmin);
 
-// Xóa câu hỏi (cưỡng chế)
-router.delete("/:id", authenticate, isAdmin, deleteQuestion);
+router.get("/", getAllQuestions);
+router.delete("/:id", deleteQuestion);
+router.patch("/:id/approve", approveQuestion);
+router.delete("/:id/reject", rejectQuestion);
 
 export default router;

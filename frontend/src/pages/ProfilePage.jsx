@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
@@ -11,7 +11,6 @@ import { toast } from "react-hot-toast";
 import axiosClient from "../services/axiosClient";
 import * as followService from "../services/followService";
 import FollowListModal from "../components/follow/FollowListModal";
-
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -21,6 +20,9 @@ export default function ProfilePage() {
   const [form, setForm] = useState({});
   const [stats, setStats] = useState({ followers: 0, following: 0 });
   const [followModalConfig, setFollowModalConfig] = useState({ isOpen: false, type: "followers" });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef(null);
+
 
   useEffect(() => {
     fetchProfile();
@@ -72,7 +74,43 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    setUploadingAvatar(true);
+    try {
+      const res = await axiosClient.put("/user/update-avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      const updatedUser = res.data.user;
+      setProfile(updatedUser);
+      setForm(updatedUser);
+      
+      // Update global context & local storage
+      const newUserState = { ...user, avatar: updatedUser.avatar };
+      setUser(newUserState);
+      localStorage.setItem("user", JSON.stringify(newUserState));
+      
+      toast.success("Cập nhật ảnh đại diện thành công!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Không thể upload ảnh");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
 
   if (loading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
 
@@ -84,13 +122,33 @@ export default function ProfilePage() {
         
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 pt-8">
           <div className="relative group">
-            <Avatar src={profile?.avatar} name={profile?.username} size="xl" />
-            {editing && (
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <Camera size={20} className="text-white" />
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleAvatarChange} 
+            />
+            <div 
+              className={`relative rounded-full overflow-hidden ${uploadingAvatar ? 'opacity-50' : 'cursor-pointer'}`}
+              onClick={!uploadingAvatar ? handleAvatarClick : undefined}
+            >
+              <Avatar src={profile?.avatar} name={profile?.username} size="xl" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploadingAvatar ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Camera size={24} className="text-white" />
+                )}
               </div>
+            </div>
+            {uploadingAvatar && (
+               <div className="absolute inset-0 flex items-center justify-center">
+                  <Spinner size="md" />
+               </div>
             )}
           </div>
+
           <div className="flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-bold text-slate-100">{profile?.username}</h1>
             <p className="text-sm text-slate-500">@{profile?.identifier}</p>

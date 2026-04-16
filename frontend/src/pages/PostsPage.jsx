@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 import Card from "../components/ui/Card";
+
 import Button from "../components/ui/Button";
 import Avatar from "../components/ui/Avatar";
 import Modal from "../components/ui/Modal";
@@ -25,8 +27,10 @@ import {
   Edit,
   Trash2,
   Hash,
-  Search
+  Search,
+  AlertCircle
 } from "lucide-react";
+
 
 import * as questionService from "../services/questionService";
 import * as hashtagService from "../services/hashtagService";
@@ -51,6 +55,11 @@ export default function PostsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
+
+  // Moderation state
+  const [moderationModal, setModerationModal] = useState({ open: false, words: [], formData: null });
+  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
     fetchPosts();
@@ -89,20 +98,29 @@ export default function PostsPage() {
 
   const handleImageChange = (e) => {
     if (e.target.files) {
-      setSelectedImages(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files);
+      setSelectedImages((prev) => [...prev, ...newFiles]);
     }
+    // Reset value to allow selecting same file again if removed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleCreateOrUpdatePost = async () => {
+  const removeImage = (index) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+
+  const handleCreateOrUpdatePost = async (isForced = false) => {
     if (!newPostTitle.trim() || !newPost.trim()) return;
 
-    // Lấy hashtag từ ô nhập riêng (tách bằng dấu phẩy hoặc khoảng trắng)
+    // Lấy hashtag từ ô nhập riêng
     const rawTags = hashtagInput.split(/[\s,]+/).filter(tag => tag.trim() !== "");
     const formattedHashtags = rawTags.map((tag) => tag.startsWith("#") ? tag.slice(1).toLowerCase() : tag.toLowerCase());
 
+    setLoading(true);
     try {
       if (editingPostId) {
-        // Edit mode (không sửa ảnh)
+        // Edit mode
         const updateData = {
           title: newPostTitle,
           content: newPost,
@@ -120,17 +138,43 @@ export default function PostsPage() {
         if (selectedImages && selectedImages.length > 0) {
           selectedImages.forEach((img) => formData.append("images", img));
         }
-        await questionService.createQuestion(formData);
+        
+        if (isForced) {
+           formData.append("forceModeration", "true");
+        }
+
+        try {
+          const res = await questionService.createQuestion(formData);
+          if (!res.data.data.approved) {
+             toast.success("Bài viết đã được gửi và đang chờ kiểm duyệt");
+          } else {
+             toast.success("Đã đăng bài thành công");
+          }
+        } catch (err) {
+          if (err.response?.data?.status === "REQUIRES_MODERATION") {
+            setModerationModal({
+              open: true,
+              words: err.response.data.data.bannedWords || [],
+              formData: formData
+            });
+            return;
+          }
+          throw err;
+        }
       }
 
       await fetchPosts();
       await fetchTrendingTags();
       closeModal();
+      setModerationModal({ open: false, words: [], formData: null });
     } catch (err) {
       console.error(err);
-      alert("Có lỗi xảy ra: " + err.message);
+      toast.error(err.response?.data?.message || err.message || "Có lỗi xảy ra");
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const closeModal = () => {
     setNewPostTitle("");
@@ -391,12 +435,26 @@ export default function PostsPage() {
                 className="hidden"
               />
               {selectedImages.length > 0 && (
-                <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                <div className="flex gap-3 mb-2 overflow-x-auto pb-3 pt-1 px-1 custom-scrollbar">
                   {selectedImages.map((img, idx) => (
-                    <div key={idx} className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-slate-700">
+                    <div key={idx} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 border-slate-700/50 group bg-slate-800">
                       <img src={URL.createObjectURL(img)} className="w-full h-full object-cover" alt="upload preview" />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Xóa ảnh"
+                      >
+                        <X size={12} />
+                      </button>
                     </div>
                   ))}
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-20 h-20 shrink-0 rounded-xl border-2 border-dashed border-slate-700 hover:border-indigo-500/50 flex flex-col items-center justify-center text-slate-500 hover:text-indigo-400 transition-all bg-slate-800/30"
+                  >
+                    <Plus size={20} />
+                    <span className="text-[10px] mt-1 font-medium">Thêm</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -416,13 +474,60 @@ export default function PostsPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">{newPostTitle.length} - {newPost.length}/1000</span>
-            <Button onClick={handleCreateOrUpdatePost} disabled={!newPostTitle.trim() || !newPost.trim()}>
+            <Button 
+              onClick={() => handleCreateOrUpdatePost(false)} 
+              disabled={!newPostTitle.trim() || !newPost.trim()}
+              loading={loading}
+            >
               <Send size={16} />
               {editingPostId ? "Lưu thay đổi" : "Đăng bài"}
             </Button>
           </div>
         </div>
       </Modal>
+
+      {/* Moderation Confirmation Modal */}
+      <Modal 
+        isOpen={moderationModal.open} 
+        onClose={() => setModerationModal({ ...moderationModal, open: false })}
+        title="Nội dung cần kiểm duyệt"
+        size="sm"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={28} className="text-amber-400" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-100 mb-2">Phát hiện từ nhạy cảm</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            Bài viết của bạn chứa một số từ ngữ cần được kiểm duyệt: 
+            <span className="text-amber-400 font-semibold ml-1">
+              {moderationModal.words.join(", ")}
+            </span>
+          </p>
+          <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50 text-[11px] text-slate-500 text-left mb-6">
+            Lưu ý: Nếu tiếp tục, bài viết của bạn sẽ không hiển thị ngay lập tức mà phải chờ Quản trị viên phê duyệt.
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              variant="secondary" 
+              className="flex-1" 
+              onClick={() => setModerationModal({ ...moderationModal, open: false })}
+            >
+              Hủy bỏ
+            </Button>
+            <Button 
+              variant="primary" 
+              className="flex-1" 
+              onClick={() => handleCreateOrUpdatePost(true)}
+              loading={loading}
+            >
+              Đồng ý gửi duyệt
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

@@ -31,4 +31,7 @@ const ConversationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Tìm kiếm danh sách chat của một user và sắp xếp theo độ mới nhất
+ConversationSchema.index({ participants: 1, updatedAt: -1 });
+
 export default mongoose.model("Conversation", ConversationSchema);

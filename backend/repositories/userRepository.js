@@ -1,15 +1,15 @@
 import User from "../models/User.js";
 
 export const findByEmail = async (email) => {
-  return await User.findOne({ email });
+  return await User.findOne({ email }).lean();
 };
 
 export const findByUsername = async (username) => {
-  return await User.findOne({ username });
+  return await User.findOne({ username }).lean();
 };
 
 export const findByIdentifier = async (identifier) => {
-  return await User.findOne({ identifier });
+  return await User.findOne({ identifier }).lean();
 };
 
 export const findByIdentifierLean = async (identifier, select = "") => {
@@ -32,7 +32,7 @@ export const searchUsers = async (searchTerm, limit = 5) => {
 
 
 export const findById = async (id) => {
-  return await User.findById(id);
+  return await User.findById(id).lean();
 };
 
 export const findByIdLean = async (id, select = "") => {

@@ -6,7 +6,10 @@ export const create = async (questionData) => {
 };
 
 export const findById = async (id) => {
-  return await Question.findById(id).populate("author", "username avatar").populate("hashtags", "name");
+  return await Question.findById(id)
+    .populate("author", "username avatar")
+    .populate("hashtags", "name")
+    .lean();
 };
 
 export const updateById = async (id, updateData) => {

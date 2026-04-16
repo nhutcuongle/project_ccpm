@@ -5,12 +5,17 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
+import compression from "compression";
+import helmet from "helmet";
 import User from "./models/User.js";
 
 import authRoutes from "./routes/auth.js";
 import adminUserRoutes from "./routes/adminUser.js";
 import adminQuestionRoutes from "./routes/adminQuestion.js";
 import adminStatsRoutes from "./routes/adminStats.js";
+import adminBannedWordRoutes from "./routes/adminBannedWord.js";
+
 import userRoutes from "./routes/user.js";
 import voteRoutes from "./routes/vote.js";
 import answerRoutes from "./routes/answer.js";
@@ -94,6 +99,8 @@ io.on("connection", (socket) => {
 // ==============================
 // EXPRESS MIDDLEWARE
 // ==============================
+app.use(helmet()); // Bảo mật các HTTP header
+app.use(compression()); // Nén dữ liệu gửi đi (Gzip)
 app.use(
   cors({
     origin: [process.env.CLIENT_URL || "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -103,9 +110,37 @@ app.use(
 app.use(express.json());
 
 // ==============================
+// RATE LIMITING (Phase 1 Scaling)
+// ==============================
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  limit: 100, // Ghới hạn 100 requests cho mỗi IP mỗi 15 phút
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Bạn đã gửi quá nhiều yêu cầu, vui lòng thử lại sau 15 phút.",
+  },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 giờ
+  limit: 20, // Chỉ cho phép 20 lần thử đăng nhập/đăng ký mỗi giờ mỗi IP
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Quá nhiều nỗ lực xác thực từ IP này, vui lòng thử lại sau 1 giờ.",
+  },
+});
+
+// Áp dụng limiter chung cho tất cả API
+app.use("/api", apiLimiter);
+
+// ==============================
 // ROUTES
 // ==============================
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
 
 app.use("/api/protected", authenticate, (req, res) => {
   res.json({ message: `Xin chào ${req.user.role}`, id: req.user.id });
@@ -118,6 +153,8 @@ app.use("/api/admin-only", authenticate, isAdmin, (req, res) => {
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/questions", adminQuestionRoutes);
 app.use("/api/admin/stats", adminStatsRoutes);
+app.use("/api/admin/banned-words", adminBannedWordRoutes);
+
 app.use("/api/user", userRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/answers", answerRoutes);

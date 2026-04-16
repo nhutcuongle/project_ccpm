@@ -14,7 +14,9 @@ import {
   Shield,
   Search,
   FileText,
+  Ban,
 } from "lucide-react";
+
 import { useState, useRef, useEffect } from "react";
 import * as userService from "../../services/userService";
 import { toast } from "react-hot-toast";
@@ -291,6 +293,19 @@ export default function Header() {
                     <Users size={20} />
                     Quản lý người dùng
                   </Link>
+                  <Link
+                    to="/admin/banned-words"
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive("/admin/banned-words")
+                        ? "gradient-primary text-white"
+                        : "text-amber-400/80 hover:bg-amber-500/10"
+                    }`}
+                  >
+                    <Ban size={20} />
+                    Quản lý từ cấm
+                  </Link>
+
                 </>
               )}
             </nav>

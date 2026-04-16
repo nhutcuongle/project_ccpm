@@ -18,7 +18,6 @@ const hashtagSchema = new mongoose.Schema(
 );
 
 // Index để tìm kiếm hashtag nhanh
-hashtagSchema.index({ name: 1 });
 hashtagSchema.index({ postCount: -1 });
 
 export default mongoose.model("Hashtag", hashtagSchema);

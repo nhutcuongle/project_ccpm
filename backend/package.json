@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "cluster": "pm2 start ecosystem.config.cjs",
+    "stop": "pm2 stop ccpm-backend",
+    "monitor": "pm2 monit"
   },
   "keywords": [],
   "author": "",
@@ -15,16 +18,20 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.1.1",
     "mongoose": "^8.16.3",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "pm2": "^6.0.14",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

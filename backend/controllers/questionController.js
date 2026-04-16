@@ -2,6 +2,8 @@ import * as questionRepo from "../repositories/questionRepository.js";
 import * as hashtagRepo from "../repositories/hashtagRepository.js";
 import { cloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
+import FilteredWord from "../models/FilteredWord.js";
+
 
 // [POST] /api/questions
 export const createQuestion = async (req, res) => {
@@ -23,13 +25,42 @@ export const createQuestion = async (req, res) => {
       hashtagIds = await hashtagRepo.upsertMany(hashtagNames);
     }
 
+    // Kiểm tra từ cấm (Trừ Admin)
+    let isPending = false;
+    if (req.user.role !== "admin") {
+      const bannedWords = await FilteredWord.find().select("word");
+      const foundWords = [];
+      const lowerTitle = (title || "").toLowerCase();
+      const lowerContent = (content || "").toLowerCase();
+
+      for (const b of bannedWords) {
+        if (lowerTitle.includes(b.word) || lowerContent.includes(b.word)) {
+          foundWords.push(b.word);
+        }
+      }
+
+      if (foundWords.length > 0) {
+        if (!req.body.forceModeration) {
+          return res.status(400).json({
+            success: false,
+            status: "REQUIRES_MODERATION",
+            message: "Nội dung của bạn chứa từ nhạy cảm",
+            data: { bannedWords: foundWords }
+          });
+        }
+        isPending = true;
+      }
+    }
+
     const question = await questionRepo.create({
       title,
       content,
       images,
       author: authorId,
       hashtags: hashtagIds,
+      approved: !isPending,
     });
+
 
     res.status(201).json({
       success: true,

@@ -13,5 +13,8 @@ const MessageSchema = new mongoose.Schema({
   edited: { type: Boolean, default: false },
 });
 
+// Tìm kiếm tin nhắn theo cuộc hội thoại và sắp xếp theo thời gian cực nhanh
+MessageSchema.index({ conversation: 1, createdAt: -1 });
+
 export default mongoose.model("Message", MessageSchema);
 

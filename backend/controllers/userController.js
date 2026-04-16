@@ -55,3 +55,20 @@ export const searchUsers = async (req, res) => {
   }
 };
 
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) throw new Error("Chưa chọn file ảnh");
+    
+    const imageUrl = req.file.path;
+    const updatedUser = await userService.updateUserProfile(req.user.id, { avatar: imageUrl });
+    
+    res.json({
+      success: true,
+      message: "Cập nhật ảnh đại diện thành công",
+      user: updatedUser
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+

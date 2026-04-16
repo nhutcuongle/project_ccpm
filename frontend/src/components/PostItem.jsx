@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+
 import Card from "./ui/Card";
 import Avatar from "./ui/Avatar";
 import Button from "./ui/Button";
@@ -12,11 +14,14 @@ import {
   MoreHorizontal,
   Send,
   Trash2,
-  Edit
+  Edit,
+  Image as ImageIcon
 } from "lucide-react";
 import voteService from "../services/voteService";
 import answerService from "../services/answerService";
 import { useAuth } from "../context/AuthContext";
+import ImageLightbox from "./ui/ImageLightbox";
+
 
 export default function PostItem({ post, onUpdate, className, activeDropdown, setActiveDropdown, handleEdit, handleDelete, setActiveHashtagFilter, getTimeAgo }) {
   const { user } = useAuth();
@@ -25,6 +30,8 @@ export default function PostItem({ post, onUpdate, className, activeDropdown, se
   const [newAnswer, setNewAnswer] = useState("");
   const [isVoting, setIsVoting] = useState(false);
   const [loadingAnswers, setLoadingAnswers] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
 
   const handleVote = async (voteType) => {
     if (!user) return alert("Vui lòng đăng nhập để bình chọn");
@@ -122,7 +129,7 @@ export default function PostItem({ post, onUpdate, className, activeDropdown, se
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-start justify-between mb-3 relative">
-            <div className="flex items-center gap-3">
+            <Link to={post.author?._id === (user?._id || user?.id) ? "/profile" : `/profile/${post.author?._id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <Avatar src={post.author?.avatar} name={post.author?.username || "Ẩn danh"} size="md" />
               <div>
                 <p className="text-sm font-semibold text-slate-200">
@@ -132,7 +139,8 @@ export default function PostItem({ post, onUpdate, className, activeDropdown, se
                   <p className="text-xs text-slate-500">{getTimeAgo ? getTimeAgo(post.createdAt) : new Date(post.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
-            </div>
+            </Link>
+
 
             {/* Dropdown Options */}
             {(user?._id === post.author?._id || user?.role === "admin") && (
@@ -169,19 +177,38 @@ export default function PostItem({ post, onUpdate, className, activeDropdown, se
             {post.content}
           </p>
 
-          {/* Images */}
+          {/* Images Gallery Preview */}
           {post.images && post.images.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {post.images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt="Question upload"
-                  className="rounded-lg object-cover w-full max-h-48"
-                />
-              ))}
+            <div 
+              className="relative cursor-pointer group mb-4 overflow-hidden rounded-2xl border border-slate-700/50 bg-slate-800/20"
+              onClick={() => setIsLightboxOpen(true)}
+            >
+              <img
+                src={post.images[0]}
+                alt="Question preview"
+                className="w-full max-h-[450px] object-cover rounded-2xl group-hover:scale-[1.02] transition-all duration-500 ease-in-out"
+              />
+              
+              {/* Overlay for multiple images */}
+              {post.images.length > 1 && (
+                <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold border border-white/10 shadow-2xl group-hover:bg-indigo-600 transition-colors duration-300">
+                  <ImageIcon size={14} />
+                  +{post.images.length - 1} ảnh
+                </div>
+              )}
+              
+              {/* Hover effect overlay */}
+              <div className="absolute inset-0 bg-indigo-500/0 group-hover:bg-indigo-500/5 transition-colors duration-300" />
             </div>
           )}
+
+          {/* Lightbox for viewing all images */}
+          <ImageLightbox 
+            images={post.images} 
+            isOpen={isLightboxOpen} 
+            onClose={() => setIsLightboxOpen(false)} 
+          />
+
 
           {/* Tags */}
           {post.hashtags && post.hashtags.length > 0 && (
@@ -253,10 +280,14 @@ export default function PostItem({ post, onUpdate, className, activeDropdown, se
                 <div className="space-y-4">
                   {answers.map((ans) => (
                     <div key={ans._id} className="flex gap-3 group">
-                      <Avatar src={ans.author.avatar} name={ans.author.username} size="sm" />
+                      <Link to={ans.author._id === (user?._id || user?.id) ? "/profile" : `/profile/${ans.author._id}`} className="shrink-0 hover:opacity-80 transition-opacity">
+                        <Avatar src={ans.author.avatar} name={ans.author.username} size="sm" />
+                      </Link>
                       <div className="flex-1 bg-slate-800/30 rounded-xl p-3 relative">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-xs font-bold text-slate-200">{ans.author.username}</p>
+                          <Link to={ans.author._id === (user?._id || user?.id) ? "/profile" : `/profile/${ans.author._id}`} className="text-xs font-bold text-slate-200 hover:text-indigo-400 transition-colors">
+                            {ans.author.username}
+                          </Link>
                           {user?._id === ans.author._id && (
                             <button
                                onClick={() => handleDeleteAnswer(ans._id)}

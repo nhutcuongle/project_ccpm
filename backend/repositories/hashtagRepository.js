@@ -1,7 +1,7 @@
 import Hashtag from "../models/Hashtag.js";
 
 export const findByName = async (name) => {
-  return await Hashtag.findOne({ name });
+  return await Hashtag.findOne({ name }).lean();
 };
 
 export const create = async (name) => {
@@ -32,5 +32,5 @@ export const getTrending = async (limit = 10) => {
 };
 
 export const findByIds = async (ids) => {
-    return await Hashtag.find({ _id: { $in: ids } });
+  return await Hashtag.find({ _id: { $in: ids } }).lean();
 };

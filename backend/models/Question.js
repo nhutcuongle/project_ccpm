@@ -18,4 +18,16 @@ const questionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Tối ưu cho việc lấy feed (Mới nhất, đã duyệt)
+questionSchema.index({ approved: 1, createdAt: -1 });
+
+// Tối ưu cho việc lọc theo hashtag
+questionSchema.index({ hashtags: 1, approved: 1 });
+
+// Tối ưu cho việc sắp xếp theo độ phổ biến (Popular)
+questionSchema.index({ score: -1, answersCount: -1 });
+
+// Text index để tìm kiếm hiệu quả hơn regex (dành cho tìm kiếm text)
+questionSchema.index({ title: "text", content: "text" });
+
 export default mongoose.model("Question", questionSchema);

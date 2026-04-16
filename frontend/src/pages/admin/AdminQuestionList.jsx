@@ -5,7 +5,9 @@ import Avatar from "../../components/ui/Avatar";
 import Spinner from "../../components/ui/Spinner";
 import Modal from "../../components/ui/Modal";
 import EmptyState from "../../components/ui/EmptyState";
-import { Search, Trash2, FileText, Calendar, User, AlertTriangle } from "lucide-react";
+import { Search, Trash2, FileText, Calendar, User, AlertTriangle, CheckCircle2, XCircle, Clock } from "lucide-react";
+import Badge from "../../components/ui/Badge";
+
 import { toast } from "react-hot-toast";
 import axiosClient from "../../services/axiosClient";
 
@@ -17,13 +19,17 @@ export default function AdminQuestionList() {
   const [loading, setLoading] = useState(true);
   const [deleteModal, setDeleteModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [filter, setFilter] = useState("all"); // all, pending, approved
 
-  const fetchQuestions = useCallback(async (p = 1, search = query) => {
+
+  const fetchQuestions = useCallback(async (p = 1, search = query, currentFilter = filter) => {
     setLoading(true);
     try {
-      const res = await axiosClient.get("/admin/questions", {
-        params: { page: p, limit: 10, search: search },
-      });
+      const params = { page: p, limit: 10, search: search };
+      if (currentFilter === "pending") params.approved = "false";
+      if (currentFilter === "approved") params.approved = "true";
+      
+      const res = await axiosClient.get("/admin/questions", { params });
       setQuestions(res.data.data);
       setTotal(res.data.pagination.total);
     } catch {
@@ -31,18 +37,40 @@ export default function AdminQuestionList() {
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [filter, query]);
 
   useEffect(() => {
-    fetchQuestions(1, query);
-  }, [query]);
+    fetchQuestions(1, query, filter);
+  }, [query, filter, fetchQuestions]);
 
-  const handleDelete = async () => {
-    if (!deleteModal) return;
-    setActionLoading(deleteModal);
+
+  const handleApprove = async (id) => {
     try {
-      await axiosClient.delete(`/admin/questions/${deleteModal}`);
-      toast.success("Đã xóa câu hỏi");
+      await axiosClient.patch(`/admin/questions/${id}/approve`);
+      toast.success("Đã duyệt bài viết");
+      fetchQuestions(page);
+    } catch {
+      toast.error("Duyệt bài thất bại");
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối bài viết này? Bài viết sẽ bị xóa.")) return;
+    try {
+      await axiosClient.delete(`/admin/questions/${id}/reject`);
+      toast.success("Đã từ chối bài viết");
+      fetchQuestions(page);
+    } catch {
+      toast.error("Từ chối bài thất bại");
+    }
+  };
+
+  const handleDelete = async (id = deleteModal) => {
+    if (!id) return;
+    setActionLoading(id);
+    try {
+      await axiosClient.delete(`/admin/questions/${id}`);
+      toast.success("Đã xóa bài viết");
       setDeleteModal(null);
       fetchQuestions(page);
     } catch (err) {
@@ -51,6 +79,7 @@ export default function AdminQuestionList() {
       setActionLoading(null);
     }
   };
+
 
   const totalPages = Math.ceil(total / 10);
 
@@ -66,17 +95,38 @@ export default function AdminQuestionList() {
           <p className="text-sm text-slate-500 mt-1">Tổng cộng {total} bài đăng đang được giám sát</p>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-80">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Tìm theo tiêu đề, nội dung..."
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 input-glow transition-all"
-          />
+        {/* Search & Filter */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="flex bg-slate-800/50 p-1 rounded-xl border border-slate-700/50">
+            {[
+              { id: "all", label: "Tất cả" },
+              { id: "pending", label: "Chờ duyệt" },
+              { id: "approved", label: "Đã duyệt" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => { setFilter(t.id); setPage(1); }}
+                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filter === t.id ? "bg-indigo-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:w-64">
+            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all"
+            />
+          </div>
         </div>
+
       </div>
 
       {/* Questions Table */}
@@ -97,9 +147,10 @@ export default function AdminQuestionList() {
                   <tr className="border-b border-slate-700/30">
                     <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Nội dung câu hỏi</th>
                     <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Tác giả</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Trạng thái</th>
                     <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Thời gian</th>
-                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Tương tác</th>
                     <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-6 py-4">Hành động</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -115,36 +166,56 @@ export default function AdminQuestionList() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Avatar src={q.author?.avatar} name={q.author?.username} size="xs" />
-                          <span className="text-sm text-slate-400">{q.author?.username}</span>
-                        </div>
+                        <span className="text-sm text-slate-400 font-medium">{q.author?.username}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {q.approved ? (
+                          <Badge variant="active" className="flex items-center gap-1 w-fit">
+                            <CheckCircle2 size={10} /> Đã duyệt
+                          </Badge>
+                        ) : (
+                          <Badge variant="warning" className="flex items-center gap-1 w-fit">
+                            <Clock size={10} /> Chờ duyệt
+                          </Badge>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-500">
-                        <div className="flex items-center gap-1">
-                          <Calendar size={12} />
-                          {new Date(q.createdAt).toLocaleDateString("vi-VN")}
-                        </div>
+                        {new Date(q.createdAt).toLocaleDateString("vi-VN")}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <span>{q.score} điểm</span>
-                          <span>{q.answersCount} phản hồi</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end">
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            ghost
-                            onClick={() => setDeleteModal(q._id)}
-                            icon={<Trash2 size={14} />}
+                        <div className="flex items-center justify-end gap-2">
+                          {!q.approved && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(q._id)}
+                                className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-all border border-emerald-500/20"
+                                title="Phê duyệt"
+                              >
+                                <CheckCircle2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleReject(q._id)}
+                                className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-all border border-red-500/20"
+                                title="Từ chối"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Bạn có chắc muốn xóa bài viết này?")) {
+                                handleDelete(q._id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                            title="Xóa vĩnh viễn"
                           >
-                            Xóa
-                          </Button>
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>

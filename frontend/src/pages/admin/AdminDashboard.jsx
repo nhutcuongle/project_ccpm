@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import Card from "../../components/ui/Card";
 import Spinner from "../../components/ui/Spinner";
-import { Users, FileText, MessageSquare, BarChart3, Activity, ShieldCheck } from "lucide-react";
+import { Users, FileText, MessageSquare, BarChart3, Activity, ShieldCheck, Ban, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+
 import axiosClient from "../../services/axiosClient";
 import { toast } from "react-hot-toast";
 
@@ -63,6 +65,28 @@ export default function AdminDashboard() {
     }
   ];
 
+  const navigationLinks = [
+    {
+      title: "Quản lý bài viết",
+      desc: "Phê duyệt hoặc xóa các câu hỏi vi phạm chính sách nội dung",
+      icon: <FileText className="text-amber-400" />,
+      to: "/admin/questions",
+    },
+    {
+      title: "Quản lý từ cấm",
+      desc: "Thiết lập danh sách từ ngữ nhạy cảm cần kiểm duyệt tự động",
+      icon: <Ban className="text-red-400" />,
+      to: "/admin/banned-words",
+    },
+    {
+      title: "Quản lý người dùng",
+      desc: "Xem danh sách thành viên và quản lý trạng thái tài khoản",
+      icon: <Users className="text-blue-400" />,
+      to: "/admin/users",
+    }
+  ];
+
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -93,6 +117,28 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Navigation Section */}
+      <div>
+        <h2 className="text-lg font-bold text-slate-200 mb-4">Quản lý hệ thống</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {navigationLinks.map((link, index) => (
+            <Link key={index} to={link.to} className="group">
+              <Card className="p-6 hover:border-indigo-500/50 transition-all duration-300 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-slate-800/50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  {link.icon}
+                </div>
+                <h3 className="font-bold text-slate-200 mb-2">{link.title}</h3>
+                <p className="text-xs text-slate-500 mb-6 flex-1">{link.desc}</p>
+                <div className="flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-all">
+                  Quản lý ngay <ArrowRight size={14} className="ml-1" />
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
 
       {/* System Status Table (Placeholder for now) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

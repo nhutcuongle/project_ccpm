@@ -189,7 +189,8 @@ function PendingItem({ conv, onPreview, onAccept, onReject, isSent }) {
 // ─────────────────────────────────────────────────────
 // MESSAGE BUBBLE
 // ─────────────────────────────────────────────────────
-function MessageBubble({ msg, isMe, onRecall, onDeleteForMe }) {
+function MessageBubble({ msg, isMe, avatar, onRecall, onDeleteForMe }) {
+
   const [showOptions, setShowOptions] = useState(false);
   const [showModal, setShowModal] = useState(false);
   // For own msg: "everyone" = recall, "me" = delete for me
@@ -240,9 +241,8 @@ function MessageBubble({ msg, isMe, onRecall, onDeleteForMe }) {
 
   return (
     <>
-      <div className={`flex ${isMe ? "justify-end" : "justify-start"} group relative`}>
+      <div className={`flex items-center gap-2 ${isMe ? "flex-row-reverse justify-start" : "justify-start"} group relative mb-1`}>
 
-        {/* 3-dot button — LEFT of bubble (for own messages) */}
         {isMe && (
           <div className="relative flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity px-1" ref={menuRef}>
             <button
@@ -990,9 +990,11 @@ export default function MessagesPage() {
                     key={msg._id}
                     msg={msg}
                     isMe={isMe}
+                    avatar={selectedConv.other?.avatar}
                     onRecall={handleRecall}
                     onDeleteForMe={handleDeleteForMe}
                   />
+
                 );
               })}
 

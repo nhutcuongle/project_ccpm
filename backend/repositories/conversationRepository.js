@@ -1,5 +1,5 @@
 import Conversation from "../models/Conversation.js";
-import { encryptText, decryptConversationObj } from "../utils/encryption.js";
+import { decryptConversationObj } from "../utils/encryption.js";
 
 /**
  * Tìm conversation giữa 2 user (không phân biệt thứ tự)
@@ -94,10 +94,9 @@ export const updateStatus = async (convId, status) => {
  * Cập nhật lastMessage sau khi gửi tin
  */
 export const updateLastMessage = async (convId, { text, sender, createdAt }) => {
-  const encryptedText = encryptText(text);
   const conv = await Conversation.findByIdAndUpdate(
     convId,
-    { lastMessage: { text: encryptedText, sender, createdAt } },
+    { lastMessage: { text, sender, createdAt } },
     { new: true }
   ).lean();
   return decryptConversationObj(conv);
